@@ -3,6 +3,8 @@
 var validator = require('validator');
 var User = require('../models/user');
 var bcrypt = require('bcrypt-node');
+var fs = require('fs');
+var path = require('path');
 var jwt = require('../services/jwt');
 
 var controller = {
@@ -219,7 +221,65 @@ var controller = {
                     });
                 });            
             }
+    },
+
+    uploadAvatar: function(req, res){
+        //configurar el modulo multiparty(md) routes/user.js
+        
+        //recoger el fichero de la peticion
+        var file_name = 'Avatar no subido...';
+
+       if(!req.files){
+            return res.status(404).send({
+                status: 'error',
+                message: file_name
+            });
+       }
+            //conseguir el nombre y la extesion del archivo
+            var file_path = req.files.file0.path;
+            var file_split = file_path.split('\\');
+
+            //advertencia: en linux o mac var file_split = file_path.split('//');
+
+            //nombre del archivo
+            var file_name = file_split[2];
+
+            //extension del archivo
+            var ext_split = file_name.split('\.');
+            var file_ext = ext_split[1];
+
+            //comprobar extension (solo imagenes), si no es valida borrar fichero subido
+            if(file_ext != 'png' && file_ext != 'jpg' && file_ext != 'jpeg' && file_ext != 'gif'){
+                fs.unlink(file_path, (err) => {
+                    return res.status(200).send({
+                        status: 'error',
+                        message: 'La extension del archivo no es valida.'
+                    });
+                });
+            }else{
+            //sacar el id del usuario identifiado
+                var userId = req.user.sub;
+
+            //buscar y actualizar documento de bd
+                User.findOneAndUpdate({_id: userId}, {image: file_name}, {new:true}, (err, userUpdated) => {
+                    if(err || !userUpdated){
+                        //devolver respuesta
+                        return res.status(500).send({
+                            status: 'error',
+                            message: 'error al guardar el usuario'
+                        });
+                    }
+                    //devolver respuesta
+                    return res.status(200).send({
+                        status: 'success',
+                        user: userUpdated
+                    });
+                });
+            
+        
         }
+
+    }
 };
 
 module.exports = controller;
