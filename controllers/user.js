@@ -149,7 +149,15 @@ var controller = {
                     });
                     
                 });
-                                   
+    },
+
+    update: function(req, res){
+        //0. crear un middleware para comprobar el jwt token, ponerselo a la ruta
+
+        return res.status(200).send({
+            message: "Metodo de actualizacion de datos de usuario"
+        });
+
     }
 };
 
