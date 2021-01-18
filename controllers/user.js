@@ -24,11 +24,16 @@ var controller = {
         var params = req.body;
 
         //validar los datos
-        var validate_name = !validator.isEmpty(params.name);
-        var validate_surname = !validator.isEmpty(params.surname);
-        var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email);
-        var validate_password = !validator.isEmpty(params.password);
-
+        try{
+            var validate_name = !validator.isEmpty(params.name);
+            var validate_surname = !validator.isEmpty(params.surname);
+            var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email);
+            var validate_password = !validator.isEmpty(params.password);
+        }catch(err){
+            return res.status(200).send({
+                message: "Faltan datos por enviar"
+            });
+        }
         console.log(validate_name, validate_surname, validate_email, validate_password);
 
         if(validate_name && validate_surname && validate_email && validate_password){
@@ -97,10 +102,14 @@ var controller = {
         //recoger los parametros de la peticion
             var params = req.body;
         //validar los datos
+        try{
             var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email);
             var validate_password = !validator.isEmpty(params.password);
-
-
+        }catch(err){
+            return res.status(200).send({
+                message: "Faltan datos por enviar"
+            });
+        }
             if(!validate_email && !validate_password){
                 return res.status(200).send({
                     message: "Los datos son incorrectos, envialos bien"
@@ -154,11 +163,63 @@ var controller = {
     update: function(req, res){
         //0. crear un middleware para comprobar el jwt token, ponerselo a la ruta
         //metodo que se ejecuta antes d que el controlador (intermediario) ejecuta logica nos deja pasar al metodo osino nos devuelve una respuesta
-        return res.status(200).send({
-            message: "Metodo de actualizacion de datos de usuario"
-        });
 
-    }
+        //recoger los datos del usuario
+        var params = req.body;
+
+        //validar los datos
+        try{
+            var validate_name = !validator.isEmpty(params.name);
+            var validate_surname = !validator.isEmpty(params.surname);
+            var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email);
+        }catch(err){
+            return res.status(200).send({
+                message: "Faltan datos por enviar"
+            });
+        }
+        
+        //eliminar propiedades innecesarias
+        delete params.password;
+        
+        var userId = req.user.sub;
+        //console.log(userId);
+        //comprobar si el email es unico
+        if(req.user.email != params.email){
+            User.findOne({email: params.email.toLowerCase()}, (err, user) =>{
+
+                if(err){
+                    return res.status(500).send({
+                        message: "Error al intentar actualizar"
+                    });
+                }
+                if(user && user.email == params.email){
+                    return res.status(200).send({
+                        message: "El email no puede ser modificado"
+                    });
+                }
+            });
+        }else{
+                User.findOneAndUpdate({_id: userId}, params, {new: true}, (err, userUpdated) => {
+                    if(err){
+                        return res.status(500).send({
+                            status: 'error',
+                            message: 'Error al actualizar usuario'
+                        });
+                    }
+                    if(!userUpdated){
+                        return res.status(200).send({
+                            status: 'error',
+                            message: 'No se ha actualizado el usuario'
+                        });
+                    }
+                    //devolver respuesta
+                    return res.status(200).send({
+                        status: 'success',
+                        user: userUpdated
+                    });
+                });            
+            }
+        }
 };
 
 module.exports = controller;
