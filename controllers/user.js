@@ -153,7 +153,7 @@ var controller = {
 
     update: function(req, res){
         //0. crear un middleware para comprobar el jwt token, ponerselo a la ruta
-
+        //metodo que se ejecuta antes d que el controlador (intermediario) ejecuta logica nos deja pasar al metodo osino nos devuelve una respuesta
         return res.status(200).send({
             message: "Metodo de actualizacion de datos de usuario"
         });
